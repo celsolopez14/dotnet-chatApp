@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using api.DTO.Message;
+using api.DTO.ChatSession;
 using api.Mappers;
 using api.Models;
 using api.Service;
@@ -22,37 +22,22 @@ namespace api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetChatSessions()
+        [Route("{userId}")]
+        public async Task<IActionResult> GetChatSessions(string userId)
         {
-            List<ChatSession> chatSessions = await _chatRepo.GetChatSessions();
+            List<ChatSession> chatSessions = await _chatRepo.GetChatSessions(userId);
 
             return Ok(chatSessions);
         }
 
         [HttpPost()]
-        public async Task<IActionResult> SendMessage([FromBody] SendMessageRequestDTO messageDTO, [FromQuery] string? chatSessionId = null)
+        public async Task<IActionResult> CreateChatSession()
         {
-            Message messageModel = messageDTO.ToMessageFromSendDTO();
+            // We will take the user from authorization
+            CreateChatSessionRequestDTO chatSessionDTO = new CreateChatSessionRequestDTO{UserId = "user-tester"};
+            ChatSession chatSession = await _chatRepo.CreateChatSession(chatSessionDTO.ToChatSessionFromCreateDTO());
 
-            if (chatSessionId == null)
-            {
-                messageModel.UserId = "user-tester";
-                messageModel = await _chatRepo.CreateChatSession(messageModel);
-            }
-            else
-            {
-                ChatSession chatSession = await _chatRepo.GetChatSession(chatSessionId);
-
-                if (chatSession == null) return BadRequest($"Could not find a chat sessio with this id: ${chatSessionId}");
-
-                messageModel.ChatSessionId = chatSessionId;
-
-                messageModel.UserId = "user-tester";
-
-                await _chatRepo.AddMessageToChatSession(messageModel, chatSessionId);
-            }
-
-            return Ok(messageModel.ToMessageDTOFromMessage());
+            return Ok(chatSession.ToChatSessionDTO());
         }
     }
 }
