@@ -24,11 +24,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 
-builder.Services.AddSingleton<IChatRepository>((s) => new ChatRepository(
+builder.Services.AddScoped<IChatRepository>((s) => new ChatRepository(
 FirestoreDb.Create(configuration["Firebase:project_id"])
 ));
-
-
 
 var app = builder.Build();
 
@@ -40,6 +38,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseWebSockets();
+app.Map("/ws/chat/{chatSessionId}", WebSocketService.HandleWebSocket);
 
 app.MapControllers();
 app.Run();

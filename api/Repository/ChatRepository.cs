@@ -21,7 +21,8 @@ namespace api.Repository
         {
             DocumentReference document = _chatContext.Collection("sessions").Document(chatSessionId);
             DocumentSnapshot snapshot = await document.GetSnapshotAsync();
-            if(snapshot.Exists){
+            if (snapshot.Exists)
+            {
                 ChatSession chatSession = snapshot.ConvertTo<ChatSession>();
                 List<Message> messages = chatSession.Messages;
                 messages.Add(messageModel);
@@ -34,24 +35,28 @@ namespace api.Repository
             return null;
         }
 
-        public async Task<Message> CreateChatSession(Message messageModel)
+        public async Task<bool> ChatSessionExists(string Id)
+        {
+            DocumentReference document = _chatContext.Collection("sessions").Document(Id);
+            DocumentSnapshot snapshot = await document.GetSnapshotAsync();
+            
+            return snapshot.Exists ? true : false;
+        }
+
+        public async Task<ChatSession> CreateChatSession(ChatSession chatSession)
         {
             DocumentReference document = _chatContext.Collection("sessions").Document();
-            messageModel.ChatSessionId = document.Id;
-            ChatSession newChatSession = new ChatSession{
-                Messages = new List<Message>{messageModel},
-            };
-
-
-            await document.SetAsync(newChatSession);
-            return messageModel;
+            chatSession.Id = document.Id;
+            await document.SetAsync(chatSession);
+            return chatSession;
         }
 
         public async Task<ChatSession> DeleteChatSession(string Id)
         {
             DocumentReference document = _chatContext.Collection("sessions").Document(Id);
             DocumentSnapshot snapshot = await document.GetSnapshotAsync();
-            if(snapshot.Exists){
+            if (snapshot.Exists)
+            {
                 ChatSession chatSession = snapshot.ConvertTo<ChatSession>();
                 await document.DeleteAsync();
                 return chatSession;
@@ -64,7 +69,8 @@ namespace api.Repository
         {
             DocumentReference document = _chatContext.Collection("sessions").Document(Id);
             DocumentSnapshot snapshot = await document.GetSnapshotAsync();
-            if(snapshot.Exists){
+            if (snapshot.Exists)
+            {
                 ChatSession chatSession = snapshot.ConvertTo<ChatSession>();
                 return chatSession;
             }
@@ -72,16 +78,16 @@ namespace api.Repository
             return null;
         }
 
-        public async Task<List<ChatSession>> GetChatSessions()
+        public async Task<List<ChatSession>> GetChatSessions(string userId)
         {
-            Query collection = _chatContext.Collection("sessions");
-            QuerySnapshot allChatSessionsSnapshot = await collection.GetSnapshotAsync();
+            Query chatSessionsQuery = _chatContext.Collection("sessions").WhereEqualTo("UserId", userId);
+            QuerySnapshot chatSessionsQuerySnapshot = await chatSessionsQuery.GetSnapshotAsync();
             List<ChatSession> chatSessions = new List<ChatSession>();
-            foreach(DocumentSnapshot documentSnapshot in allChatSessionsSnapshot.Documents){
+            foreach (DocumentSnapshot documentSnapshot in chatSessionsQuerySnapshot.Documents)
+            {
                 ChatSession chatSession = documentSnapshot.ConvertTo<ChatSession>();
                 chatSessions.Add(chatSession);
             }
-
             return chatSessions;
         }
     }

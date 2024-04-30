@@ -18,7 +18,7 @@ namespace api.Mappers
         public static MessageDTO ToMessageDTOFromMessage(this Message message){
             return new MessageDTO{
                 Content = message.Content,
-                Id = message.Id,
+                ChatSessionId = message.ChatSessionId,
                 CreatedAt = message.CreatedAt
             };
         }

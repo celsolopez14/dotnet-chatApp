@@ -8,7 +8,8 @@ namespace api.DTO.Message
 {
     public class MessageDTO
     {
-        public string? Id { get; set; } = Guid.NewGuid().ToString();
+        public string? ChatSessionId { get; set; }
+
         public string? Content { get; set; }
         public DateTime CreatedAt { get; set; }
     }
