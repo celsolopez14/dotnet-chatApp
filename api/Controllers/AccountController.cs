@@ -2,11 +2,41 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using api.DTO.Account;
+using api.Interfaces;
+using Firebase.Auth;
+using Microsoft.AspNetCore.Mvc;
 
 namespace api.Controllers
 {
-    public class AccountController
+    [Route("api/account")]
+    [ApiController]
+    public class AccountController : ControllerBase
     {
-        
+        private readonly IFirebaseAuthService _firebaseAuthService;
+        public AccountController(IFirebaseAuthService firebaseAuthService)
+        {
+            _firebaseAuthService = firebaseAuthService;
+        }
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterDTO registerDTO)
+        {
+            if(!ModelState.IsValid) return BadRequest(ModelState);
+            UserDTO user = await  _firebaseAuthService.SignUp(registerDTO.Email, registerDTO.Password, registerDTO.Username);
+
+            if(user == null) return StatusCode(500, "Could not register new user.");
+            return Ok(user);
+
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] RegisterDTO registerDTO)
+        {
+            if(!ModelState.IsValid) return BadRequest(ModelState);
+            UserDTO user = await  _firebaseAuthService.Login(registerDTO.Email, registerDTO.Password);
+
+            if(user == null) return StatusCode(500, "Wrong credentials");
+            return Ok(user);
+        }
     }
 }
