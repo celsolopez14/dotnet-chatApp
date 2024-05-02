@@ -13,10 +13,11 @@ namespace api.Service
         Task<List<ChatSession>> GetChatSessions(string userId);
         Task<ChatSession> GetChatSession(string Id);
         Task<ChatSession> CreateChatSession(ChatSession chatSession);
-        Task<Message> AddMessageToChatSession(Message messageModel, string chatSessionId);
+        Task<List<Message>> AddMessageToChatSession(Message messageModel, string chatSessionId);
         Task<ChatSession> DeleteChatSession(string Id);
 
         Task<bool> ChatSessionExists(string Id);
+        Task<bool> UserChatSessionExists(string userId, string chatSessionId);
 
     }
 }

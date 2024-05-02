@@ -43,7 +43,10 @@ msbuild.err
 msbuild.wrn
 
 # Firestore account key
-serviceAccountKey.json
+firestoredb_credentials.json
+
+# VertexAI account key
+vertexai_credentials.json
 
 #secrets
 secrets.json

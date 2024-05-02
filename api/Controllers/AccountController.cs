@@ -30,10 +30,10 @@ namespace api.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] RegisterDTO registerDTO)
+        public async Task<IActionResult> Login([FromBody] LoginDTO loginDTO)
         {
             if(!ModelState.IsValid) return BadRequest(ModelState);
-            UserDTO user = await  _firebaseAuthService.Login(registerDTO.Email, registerDTO.Password);
+            UserDTO user = await  _firebaseAuthService.Login(loginDTO.Email, loginDTO.Password);
 
             if(user == null) return StatusCode(500, "Wrong credentials");
             return Ok(user);

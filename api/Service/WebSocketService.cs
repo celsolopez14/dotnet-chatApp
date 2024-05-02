@@ -6,8 +6,12 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 using api.DTO.Message;
+using api.Interfaces;
 using api.Models;
 using api.Repository;
+using Google.Cloud.AIPlatform.V1;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace api.Service
 {
@@ -15,11 +19,28 @@ namespace api.Service
     {
         public async static Task HandleWebSocket(HttpContext httpContext)
         {
-            ChatRepository chatRepo = (ChatRepository)httpContext.RequestServices.GetRequiredService<IChatRepository>();
+            IChatRepository chatRepo = httpContext.RequestServices.GetRequiredService<IChatRepository>();
+            IGeminiAIService geminiAIService = httpContext.RequestServices.GetRequiredService<IGeminiAIService>();
+            IFirebaseAuthService firebaseAuthService = httpContext.RequestServices.GetRequiredService<IFirebaseAuthService>();
 
+            AuthenticateResult authenticateResult = await httpContext.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
+            if (!authenticateResult.Succeeded)
+            {
+                httpContext.Response.StatusCode = 401;
+                return;
+            }
             string chatSessionId = httpContext.Request.RouteValues["chatSessionId"] as string;
 
-            if(!await chatRepo.ChatSessionExists(chatSessionId)){
+            if (!await chatRepo.ChatSessionExists(chatSessionId))
+            {
+                httpContext.Response.StatusCode = 404;
+                return;
+            }
+
+            var userId = firebaseAuthService.GetUser().Uid;
+
+            if (!await chatRepo.UserChatSessionExists(userId, chatSessionId))
+            {
                 httpContext.Response.StatusCode = 404;
                 return;
             }
@@ -36,18 +57,29 @@ namespace api.Service
                     // Extract message content from WebSocket message
                     string messageContent = Encoding.UTF8.GetString(buffer.Array, 0, result.Count);
                     Message message = new Message
-                    { 
+                    {
                         Content = messageContent,
-                        ChatSessionId = chatSessionId, 
-                        UserId = "user-tester",
-                        role = "User"
+                        ChatSessionId = chatSessionId,
+                        role = "USER"
                     };
 
                     // Save message to the database along with the session ID
-                    await chatRepo.AddMessageToChatSession(message, chatSessionId);
+                    List<Message> messages = await chatRepo.AddMessageToChatSession(message, chatSessionId);
 
+                    List<Content> contents = await geminiAIService.GenerateContent(messages);
+
+                    Content response = contents.Last();
+
+                    var bufferResponse = Encoding.UTF8.GetBytes(response.Parts.Last().Text);
+
+                    await chatRepo.AddMessageToChatSession(new Message
+                    {
+                        Content = response.Parts.Last().Text,
+                        ChatSessionId = chatSessionId,
+                        role = "MODEL"
+                    }, chatSessionId);
                     // Example: Echo message back to the client
-                    await webSocket.SendAsync(buffer, result.MessageType, result.EndOfMessage, CancellationToken.None);
+                    await webSocket.SendAsync(bufferResponse, result.MessageType, result.EndOfMessage, CancellationToken.None);
                 }
             }
         }
