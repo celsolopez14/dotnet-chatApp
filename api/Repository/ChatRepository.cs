@@ -17,7 +17,7 @@ namespace api.Repository
             _chatContext = chatContext;
         }
 
-        public async Task<Message> AddMessageToChatSession(Message messageModel, string chatSessionId)
+        public async Task<List<Message>> AddMessageToChatSession(Message messageModel, string chatSessionId)
         {
             DocumentReference document = _chatContext.Collection("sessions").Document(chatSessionId);
             DocumentSnapshot snapshot = await document.GetSnapshotAsync();
@@ -29,7 +29,7 @@ namespace api.Repository
 
                 await document.UpdateAsync("Messages", messages);
 
-                return messageModel;
+                return messages;
             }
 
             return null;
@@ -89,6 +89,18 @@ namespace api.Repository
                 chatSessions.Add(chatSession);
             }
             return chatSessions;
+        }
+
+        public async Task<bool> UserChatSessionExists(string userId, string chatSessionId)
+        {
+            DocumentReference document = _chatContext.Collection("sessions").Document(chatSessionId);
+            DocumentSnapshot snapshot = await document.GetSnapshotAsync();
+            if (snapshot.Exists)
+            {
+                ChatSession chatSession = snapshot.ConvertTo<ChatSession>();
+                return chatSession.UserId == userId;
+            }
+            return false;
         }
     }
 }

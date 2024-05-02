@@ -3,7 +3,11 @@ using api.Repository;
 using api.Service;
 using Firebase.Auth;
 using Firebase.Auth.Providers;
+using Google.Apis.Auth.OAuth2;
+using Google.Cloud.AIPlatform.V1;
 using Google.Cloud.Firestore;
+using Google.Cloud.Firestore.V1;
+using Grpc.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -12,9 +16,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Get the current directory
 string currentDirectory = Directory.GetCurrentDirectory();
 
-string credentialsPath = Path.Combine(currentDirectory, "serviceAccountKey.json");
+string firestoredb_credentialsPath = Path.Combine(currentDirectory, "firestoredb_credentials.json");
+string vertexai_credentialsPath = Path.Combine(currentDirectory, "vertexai_credentials.json");
 
-Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialsPath);
+GoogleCredential firestoredb_credentials = GoogleCredential.FromFile(firestoredb_credentialsPath);
+
+Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", vertexai_credentialsPath);
 
 // Configure user secrets
 var configuration = new ConfigurationBuilder()
@@ -83,10 +90,50 @@ new FirebaseAuthClient(new FirebaseAuthConfig
     }
 }));
 
+builder.Services.AddScoped<FirestoreDb>((s) =>
+{
+    // Create the FirestoreClient
+    FirestoreClient firestoreClient = new FirestoreClientBuilder
+    {
+        // Configure the Firestore client options as needed
+        ChannelCredentials = firestoredb_credentials.ToChannelCredentials()
+    }.Build();
+
+    return FirestoreDb.Create(configuration["Firebase:project_id"], firestoreClient);
+});
+
 builder.Services.AddScoped<IFirebaseAuthService, FirebaseAuthService>();
-builder.Services.AddScoped<IChatRepository>((s) => new ChatRepository(
-FirestoreDb.Create(configuration["Firebase:project_id"])
-));
+builder.Services.AddScoped<IGeminiAIService, GeminiAIService>();
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
+builder.Services.AddScoped<PredictionServiceClient>((s) =>
+{
+    return new PredictionServiceClientBuilder
+    {
+        Endpoint = $"{configuration["VertexAI:location"]}-aiplatform.googleapis.com"
+    }.Build();
+});
+
+builder.Services.AddScoped<GenerateContentRequest>((s) =>
+{
+    Content systemInstructions = new Content();
+    systemInstructions.Parts.AddRange(new List<Part>{
+        new Part{Text = "Keep responses conversational and informal."},
+        new Part{Text = "Feel free to include emojis in your responses for added expression."},
+        new Part{Text = "Keep responses positive and upbeat in tone."}
+    });
+    return new GenerateContentRequest
+    {
+        Model = $"projects/{configuration["VertexAI:project_id"]}/locations/{configuration["VertexAI:location"]}/publishers/{configuration["VertexAI:publisher"]}/models/{configuration["VertexAI:model"]}",
+        GenerationConfig = new GenerationConfig
+        {
+            Temperature = 0.4f,
+            TopP = 1,
+            TopK = 32,
+            MaxOutputTokens = 2048,
+        },
+        SystemInstruction = systemInstructions
+    };
+});
 
 var app = builder.Build();
 

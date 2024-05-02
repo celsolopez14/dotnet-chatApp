@@ -14,8 +14,6 @@ namespace api.Models
         [FirestoreProperty]
         public string? Content { get; set; }
         [FirestoreProperty]
-        public string? UserId { get; set; }
-        [FirestoreProperty]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         [FirestoreProperty]
         public string? ChatSessionId { get; set; }

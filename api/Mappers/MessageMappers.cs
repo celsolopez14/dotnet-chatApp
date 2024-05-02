@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using api.DTO.Message;
 using api.Models;
+using Google.Cloud.AIPlatform.V1;
 
 namespace api.Mappers
 {
@@ -21,6 +22,14 @@ namespace api.Mappers
                 ChatSessionId = message.ChatSessionId,
                 CreatedAt = message.CreatedAt
             };
+        }
+
+        public static Content ToContentFromMessage(this Message message){
+            Content content = new Content{
+                Role = message.role,
+            };
+            content.Parts.Add(new Part{Text = message.Content});
+            return content;
         }
     }
 }
