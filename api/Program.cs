@@ -118,7 +118,7 @@ builder.Services.AddScoped<GenerateContentRequest>((s) =>
     Content systemInstructions = new Content();
     systemInstructions.Parts.AddRange(new List<Part>{
         new Part{Text = "Keep responses conversational and informal."},
-        new Part{Text = "Feel free to include emojis in your responses for added expression."}
+        new Part{Text = "Feel free to include emojis in your responses for added expression."},
         new Part{Text = "Keep responses positive and upbeat in tone."}
     });
     return new GenerateContentRequest
