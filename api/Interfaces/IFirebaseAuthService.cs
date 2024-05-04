@@ -12,6 +12,7 @@ namespace api.Interfaces
         Task<UserDTO?> SignUp(string email, string password, string username);
         Task<UserDTO?> Login(string email, string password);
         User GetUser();
+        bool IsUserSignedIn();
         void SignOut();
     }
 }

@@ -24,7 +24,7 @@ namespace api.Service
             IFirebaseAuthService firebaseAuthService = httpContext.RequestServices.GetRequiredService<IFirebaseAuthService>();
 
             AuthenticateResult authenticateResult = await httpContext.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
-            if (!authenticateResult.Succeeded)
+            if (!authenticateResult.Succeeded || !firebaseAuthService.IsUserSignedIn())
             {
                 httpContext.Response.StatusCode = 401;
                 return;
@@ -56,28 +56,31 @@ namespace api.Service
                 {
                     // Extract message content from WebSocket message
                     string messageContent = Encoding.UTF8.GetString(buffer.Array, 0, result.Count);
-                    Message message = new Message
+                    Message userMessage = new Message
                     {
                         Content = messageContent,
                         ChatSessionId = chatSessionId,
-                        role = "USER"
+                        role = "user"
                     };
-
-                    // Save message to the database along with the session ID
-                    List<Message> messages = await chatRepo.AddMessageToChatSession(message, chatSessionId);
-
-                    List<Content> contents = await geminiAIService.GenerateContent(messages);
-
-                    Content response = contents.Last();
+                    Content response = new Content();
+                    if (geminiAIService.IsContentEmpty())
+                    {
+                        List<Message> messages = await chatRepo.GetMessagesFromChatSession(chatSessionId);
+                        messages.Add(userMessage);
+                        response = await geminiAIService.GenerateFirstContent(messages);
+                    } else{
+                        response = await geminiAIService.GenerateContent(userMessage);
+                    }
 
                     var bufferResponse = Encoding.UTF8.GetBytes(response.Parts.Last().Text);
 
-                    await chatRepo.AddMessageToChatSession(new Message
+                    Message modelMessage = new Message
                     {
                         Content = response.Parts.Last().Text,
                         ChatSessionId = chatSessionId,
-                        role = "MODEL"
-                    }, chatSessionId);
+                        role = "model"
+                    };
+                    await chatRepo.AddMessagesToChatSession(userMessage, modelMessage, chatSessionId);
                     // Example: Echo message back to the client
                     await webSocket.SendAsync(bufferResponse, result.MessageType, result.EndOfMessage, CancellationToken.None);
                 }

@@ -9,6 +9,8 @@ namespace api.Interfaces
 {
     public interface IGeminiAIService
     {
-        Task<List<Content>> GenerateContent(List<Message> messages);
+        Task<Content> GenerateFirstContent(List<Message> messages);
+        Task<Content> GenerateContent(Message message);
+        bool IsContentEmpty();
     }
 }

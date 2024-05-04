@@ -13,7 +13,9 @@ namespace api.Service
         Task<List<ChatSession>> GetChatSessions(string userId);
         Task<ChatSession> GetChatSession(string Id);
         Task<ChatSession> CreateChatSession(ChatSession chatSession);
-        Task<List<Message>> AddMessageToChatSession(Message messageModel, string chatSessionId);
+        Task<(Message, Message)> AddMessagesToChatSession(Message userMessage, Message modelMessage, string chatSessionId);
+        Task<List<Message>> GetMessagesFromChatSession(string Id);
+
         Task<ChatSession> DeleteChatSession(string Id);
 
         Task<bool> ChatSessionExists(string Id);
