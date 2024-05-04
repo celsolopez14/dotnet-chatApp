@@ -24,19 +24,12 @@ namespace api.Service
         public async Task<Content> GenerateFirstContent(List<Message> messages)
         {
             List<Content> contents = new List<Content>();
-            Console.WriteLine("Messages: ");
             foreach (Message message in messages)
             {
                 contents.Add(message.ToContentFromMessage());
-                Console.WriteLine(message.ToContentFromMessage());
             }
 
             _generateContentRequest.Contents.AddRange(contents);
-            Console.WriteLine("Content: ");
-            foreach (Content content in _generateContentRequest.Contents)
-            {
-                Console.WriteLine(content);
-            }
 
             // Make the request, returning a streaming response
             GenerateContentResponse response = await _predictionServiceClient.GenerateContentAsync(_generateContentRequest);
