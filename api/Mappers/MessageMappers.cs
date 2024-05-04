@@ -10,12 +10,6 @@ namespace api.Mappers
 {
     public static class MessageMappers
     {
-        public static Message ToMessageFromSendDTO(this SendMessageRequestDTO messageDTO){
-            return new Message{
-                Content = messageDTO.Content,
-            };
-        }
-
         public static MessageDTO ToMessageDTOFromMessage(this Message message){
             return new MessageDTO{
                 Content = message.Content,

@@ -17,22 +17,18 @@ namespace api.Repository
             _chatContext = chatContext;
         }
 
-        public async Task<List<Message>> AddMessageToChatSession(Message messageModel, string chatSessionId)
+        public async Task<(Message, Message)> AddMessagesToChatSession(Message userMessage, Message modelMessage, string chatSessionId)
         {
             DocumentReference document = _chatContext.Collection("sessions").Document(chatSessionId);
             DocumentSnapshot snapshot = await document.GetSnapshotAsync();
             if (snapshot.Exists)
             {
-                ChatSession chatSession = snapshot.ConvertTo<ChatSession>();
-                List<Message> messages = chatSession.Messages;
-                messages.Add(messageModel);
+                await document.UpdateAsync("Messages", FieldValue.ArrayUnion(userMessage, modelMessage));
 
-                await document.UpdateAsync("Messages", messages);
-
-                return messages;
+                return (userMessage, modelMessage);
             }
 
-            return null;
+            return (null, null);
         }
 
         public async Task<bool> ChatSessionExists(string Id)
@@ -89,6 +85,14 @@ namespace api.Repository
                 chatSessions.Add(chatSession);
             }
             return chatSessions;
+        }
+
+        public async Task<List<Message>> GetMessagesFromChatSession(string Id)
+        {
+            DocumentReference document = _chatContext.Collection("sessions").Document(Id);
+            DocumentSnapshot snapshot = await document.GetSnapshotAsync();
+            if (snapshot.Exists) return snapshot.ConvertTo<ChatSession>().Messages.OrderBy(m => m.CreatedAt).ToList();
+            return null;
         }
 
         public async Task<bool> UserChatSessionExists(string userId, string chatSessionId)
