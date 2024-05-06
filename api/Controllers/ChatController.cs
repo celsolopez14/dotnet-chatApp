@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using api.DTO.Account;
 using api.DTO.ChatSession;
 using api.Interfaces;
 using api.Mappers;
@@ -27,10 +28,17 @@ namespace api.Controllers
         }
 
         [HttpGet]
-        [Route("{userId}")]
         [Authorize]
-        public async Task<IActionResult> GetChatSessions(string userId)
+        public async Task<IActionResult> GetChatSessions()
         {
+            string jwtToken = HttpContext.Request.Headers["Authorization"].ToString();
+
+            jwtToken = jwtToken.Replace("Bearer ", "");
+
+            string? userId = await _firebaseAuthService.GetUserId(jwtToken);
+
+            if(userId == null) return Unauthorized();
+
             List<ChatSession> chatSessions = await _chatRepo.GetChatSessions(userId);
 
             return Ok(chatSessions);
@@ -40,9 +48,16 @@ namespace api.Controllers
         [Authorize]
         public async Task<IActionResult> CreateChatSession()
         {
-            // We will take the user from authorization
-            User user = _firebaseAuthService.GetUser();
-            CreateChatSessionRequestDTO chatSessionDTO = new CreateChatSessionRequestDTO{UserId = user.Info.Uid};
+            string jwtToken = HttpContext.Request.Headers["Authorization"].ToString();
+            Console.WriteLine(jwtToken);
+
+            jwtToken = jwtToken.Replace("Bearer ", "");
+
+            string? userId = await _firebaseAuthService.GetUserId(jwtToken);
+
+            if(userId == null) return Unauthorized();
+
+            CreateChatSessionRequestDTO chatSessionDTO = new CreateChatSessionRequestDTO { UserId = userId };
             ChatSession chatSession = await _chatRepo.CreateChatSession(chatSessionDTO.ToChatSessionFromCreateDTO());
 
             return Ok(chatSession.ToChatSessionDTO());

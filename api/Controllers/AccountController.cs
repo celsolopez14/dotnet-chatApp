@@ -22,7 +22,7 @@ namespace api.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterDTO registerDTO)
         {
             if(!ModelState.IsValid) return BadRequest(ModelState);
-            UserDTO user = await  _firebaseAuthService.SignUp(registerDTO.Email, registerDTO.Password, registerDTO.Username);
+            UserDTO? user = await _firebaseAuthService.SignUp(registerDTO.Email, registerDTO.Password, registerDTO.Username);
 
             if(user == null) return StatusCode(500, "Could not register new user.");
             return Ok(user);
@@ -33,9 +33,10 @@ namespace api.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDTO loginDTO)
         {
             if(!ModelState.IsValid) return BadRequest(ModelState);
-            UserDTO user = await  _firebaseAuthService.Login(loginDTO.Email, loginDTO.Password);
 
-            if(user == null) return StatusCode(500, "Wrong credentials");
+            UserDTO? user = await _firebaseAuthService.Login(loginDTO.Email, loginDTO.Password);
+
+            if(user == null) return StatusCode(400, "Wrong credentials");
             return Ok(user);
         }
     }
