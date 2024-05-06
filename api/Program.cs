@@ -3,6 +3,7 @@ using api.Repository;
 using api.Service;
 using Firebase.Auth;
 using Firebase.Auth.Providers;
+using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.AIPlatform.V1;
 using Google.Cloud.Firestore;
@@ -16,10 +17,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Get the current directory
 string currentDirectory = Directory.GetCurrentDirectory();
 
-string firestoredb_credentialsPath = Path.Combine(currentDirectory, "firestoredb_credentials.json");
+string firebase_credentialsPath = Path.Combine(currentDirectory, "firestoredb_credentials.json");
 string vertexai_credentialsPath = Path.Combine(currentDirectory, "vertexai_credentials.json");
 
-GoogleCredential firestoredb_credentials = GoogleCredential.FromFile(firestoredb_credentialsPath);
+GoogleCredential firebase_credentials = GoogleCredential.FromFile(firebase_credentialsPath);
 
 Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", vertexai_credentialsPath);
 
@@ -90,13 +91,21 @@ new FirebaseAuthClient(new FirebaseAuthConfig
     }
 }));
 
+builder.Services.AddSingleton<FirebaseApp>((s) =>
+{
+    return FirebaseApp.Create(new AppOptions
+    {
+        Credential = firebase_credentials
+    });
+});
+
 builder.Services.AddScoped<FirestoreDb>((s) =>
 {
     // Create the FirestoreClient
     FirestoreClient firestoreClient = new FirestoreClientBuilder
     {
         // Configure the Firestore client options as needed
-        ChannelCredentials = firestoredb_credentials.ToChannelCredentials()
+        ChannelCredentials = firebase_credentials.ToChannelCredentials()
     }.Build();
 
     return FirestoreDb.Create(configuration["Firebase:project_id"], firestoreClient);

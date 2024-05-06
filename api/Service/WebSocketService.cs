@@ -24,22 +24,32 @@ namespace api.Service
             IFirebaseAuthService firebaseAuthService = httpContext.RequestServices.GetRequiredService<IFirebaseAuthService>();
 
             AuthenticateResult authenticateResult = await httpContext.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
-            if (!authenticateResult.Succeeded || !firebaseAuthService.IsUserSignedIn())
+            if (!authenticateResult.Succeeded)
             {
                 httpContext.Response.StatusCode = 401;
                 return;
             }
-            string chatSessionId = httpContext.Request.RouteValues["chatSessionId"] as string;
 
-            if (!await chatRepo.ChatSessionExists(chatSessionId))
+            string jwtToken = httpContext.Request.Headers["Authorization"].ToString();
+
+            jwtToken = jwtToken.Replace("Bearer ", "");
+
+            if (!await firebaseAuthService.IsTokenValid(jwtToken))
+            {
+                httpContext.Response.StatusCode = 401;
+                return;
+            }
+
+            string? userId = await firebaseAuthService.GetUserId(jwtToken);
+            string? chatSessionId = httpContext.Request.RouteValues["chatSessionId"].ToString();
+
+            if (chatSessionId == null || userId == null)
             {
                 httpContext.Response.StatusCode = 404;
                 return;
             }
 
-            var userId = firebaseAuthService.GetUser().Uid;
-
-            if (!await chatRepo.UserChatSessionExists(userId, chatSessionId))
+            if (!await chatRepo.ChatSessionExists(chatSessionId) && !await chatRepo.UserChatSessionExists(userId, chatSessionId))
             {
                 httpContext.Response.StatusCode = 404;
                 return;
@@ -51,7 +61,7 @@ namespace api.Service
             while (webSocket.State == WebSocketState.Open)
             {
                 var buffer = new ArraySegment<byte>(new byte[4096]);
-                var result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
+                WebSocketReceiveResult result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
                 if (result.MessageType == WebSocketMessageType.Text)
                 {
                     // Extract message content from WebSocket message
@@ -63,6 +73,7 @@ namespace api.Service
                         role = "user"
                     };
                     Content response = new Content();
+                    // If the app just started
                     if (geminiAIService.IsContentEmpty())
                     {
                         List<Message> messages = await chatRepo.GetMessagesFromChatSession(chatSessionId);
@@ -81,7 +92,7 @@ namespace api.Service
                         role = "model"
                     };
                     await chatRepo.AddMessagesToChatSession(userMessage, modelMessage, chatSessionId);
-                    // Example: Echo message back to the client
+                    // Returns gemini response
                     await webSocket.SendAsync(bufferResponse, result.MessageType, result.EndOfMessage, CancellationToken.None);
                 }
             }
