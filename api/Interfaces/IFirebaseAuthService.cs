@@ -14,5 +14,6 @@ namespace api.Interfaces
         Task<string?> GetUserId(string jwtToken);
         Task<bool> IsTokenValid(string jwtToken);
         Task SetCustomClaimsAsync(string uid);
+        Task SignOut(string uid);
     }
 }

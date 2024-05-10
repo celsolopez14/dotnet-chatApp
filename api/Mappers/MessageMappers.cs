@@ -13,14 +13,15 @@ namespace api.Mappers
         public static MessageDTO ToMessageDTOFromMessage(this Message message){
             return new MessageDTO{
                 Content = message.Content,
-                ChatSessionId = message.ChatSessionId,
-                CreatedAt = message.CreatedAt
+                Id = message.Id,
+                CreatedAt = message.CreatedAt,
+                Role = message.Role
             };
         }
 
         public static Content ToContentFromMessage(this Message message){
             Content content = new Content{
-                Role = message.role,
+                Role = message.Role,
             };
             content.Parts.Add(new Part{Text = message.Content});
             return content;

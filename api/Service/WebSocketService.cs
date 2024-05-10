@@ -23,16 +23,7 @@ namespace api.Service
             IGeminiAIService geminiAIService = httpContext.RequestServices.GetRequiredService<IGeminiAIService>();
             IFirebaseAuthService firebaseAuthService = httpContext.RequestServices.GetRequiredService<IFirebaseAuthService>();
 
-            AuthenticateResult authenticateResult = await httpContext.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
-            if (!authenticateResult.Succeeded)
-            {
-                httpContext.Response.StatusCode = 401;
-                return;
-            }
-
-            string jwtToken = httpContext.Request.Headers["Authorization"].ToString();
-
-            jwtToken = jwtToken.Replace("Bearer ", "");
+            string jwtToken = httpContext.Request.Query["Authorization"].ToString();
 
             if (!await firebaseAuthService.IsTokenValid(jwtToken))
             {
@@ -70,7 +61,7 @@ namespace api.Service
                     {
                         Content = messageContent,
                         ChatSessionId = chatSessionId,
-                        role = "user"
+                        Role = "user"
                     };
                     Content response = new Content();
                     // If the app just started
@@ -89,7 +80,7 @@ namespace api.Service
                     {
                         Content = response.Parts.Last().Text,
                         ChatSessionId = chatSessionId,
-                        role = "model"
+                        Role = "model"
                     };
                     await chatRepo.AddMessagesToChatSession(userMessage, modelMessage, chatSessionId);
                     // Returns gemini response

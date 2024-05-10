@@ -18,7 +18,8 @@ namespace api.Mappers
 
         public static ChatSessionDTO ToChatSessionDTO(this ChatSession chatSession){
             return new ChatSessionDTO{
-                Id = chatSession.Id
+                Id = chatSession.Id,
+                Messages = chatSession.Messages.Select((m) => m.ToMessageDTOFromMessage()).ToList()
             };
         }
         

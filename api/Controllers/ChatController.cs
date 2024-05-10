@@ -41,7 +41,7 @@ namespace api.Controllers
 
             List<ChatSession> chatSessions = await _chatRepo.GetChatSessions(userId);
 
-            return Ok(chatSessions);
+            return Ok(chatSessions.Select((c) => c.ToChatSessionDTO()).ToList());
         }
 
         [HttpPost()]
@@ -49,7 +49,6 @@ namespace api.Controllers
         public async Task<IActionResult> CreateChatSession()
         {
             string jwtToken = HttpContext.Request.Headers["Authorization"].ToString();
-            Console.WriteLine(jwtToken);
 
             jwtToken = jwtToken.Replace("Bearer ", "");
 

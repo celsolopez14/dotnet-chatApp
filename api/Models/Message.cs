@@ -18,7 +18,7 @@ namespace api.Models
         [FirestoreProperty]
         public string? ChatSessionId { get; set; }
         [FirestoreProperty]
-        public string? role { get; set; }
+        public string? Role { get; set; }
 
     }
 }
