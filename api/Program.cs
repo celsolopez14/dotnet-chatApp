@@ -155,6 +155,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors((x) => x
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+    .AllowCredentials()
+    //.WithOrigins(this is for deployment: url)
+    .SetIsOriginAllowed(origin => true));
+
 app.UseWebSockets();
 app.Map("/ws/chat/{chatSessionId}", WebSocketService.HandleWebSocket);
 

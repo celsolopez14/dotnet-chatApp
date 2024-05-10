@@ -39,5 +39,20 @@ namespace api.Controllers
             if(user == null) return StatusCode(400, "Wrong credentials");
             return Ok(user);
         }
+
+        [HttpPost("signout")]
+        public async Task<IActionResult> SignOut(){
+            
+            string jwtToken = HttpContext.Request.Headers["Authorization"].ToString();
+
+            jwtToken = jwtToken.Replace("Bearer ", "");
+
+            string? userId = await _firebaseAuthService.GetUserId(jwtToken);
+
+            if(userId == null) return Unauthorized();
+
+            await _firebaseAuthService.SignOut(userId);
+            return Ok();
+        }
     }
 }

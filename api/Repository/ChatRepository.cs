@@ -61,19 +61,6 @@ namespace api.Repository
             return null;
         }
 
-        public async Task<ChatSession> GetChatSession(string Id)
-        {
-            DocumentReference document = _chatContext.Collection("sessions").Document(Id);
-            DocumentSnapshot snapshot = await document.GetSnapshotAsync();
-            if (snapshot.Exists)
-            {
-                ChatSession chatSession = snapshot.ConvertTo<ChatSession>();
-                return chatSession;
-            }
-
-            return null;
-        }
-
         public async Task<List<ChatSession>> GetChatSessions(string userId)
         {
             Query chatSessionsQuery = _chatContext.Collection("sessions").WhereEqualTo("UserId", userId);

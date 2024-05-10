@@ -45,7 +45,7 @@ namespace api.Service
             return new UserDTO { Username = userCredentials.User.Info.DisplayName, Token = token };
         }
 
-        public async void SignOut(string userId)
+        public async Task SignOut(string userId)
         {
             var existingUser = await _firebaseAuth.GetUserAsync(userId);
             await FirebaseAuth.DefaultInstance.RevokeRefreshTokensAsync(existingUser.Uid);
@@ -77,7 +77,6 @@ namespace api.Service
         {
             try{
                 FirebaseToken decodedToken = await _firebaseAuth.VerifyIdTokenAsync(jwtToken);
-                Console.WriteLine(decodedToken.Uid);
                 return decodedToken.Uid;
             } catch(FirebaseAdmin.Auth.FirebaseAuthException e)
             {

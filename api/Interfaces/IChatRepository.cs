@@ -11,7 +11,6 @@ namespace api.Service
     public interface IChatRepository
     {
         Task<List<ChatSession>> GetChatSessions(string userId);
-        Task<ChatSession> GetChatSession(string Id);
         Task<ChatSession> CreateChatSession(ChatSession chatSession);
         Task<(Message, Message)> AddMessagesToChatSession(Message userMessage, Message modelMessage, string chatSessionId);
         Task<List<Message>> GetMessagesFromChatSession(string Id);
